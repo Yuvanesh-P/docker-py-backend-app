@@ -18,7 +18,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo 'Building Docker image...'
+                bat 'docker build -t docker-py-backend-app:%BUILD_NUMBER% .'
             }
         }
 
