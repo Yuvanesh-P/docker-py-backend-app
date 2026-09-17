@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "Yuvanesh-P/docker-py-backend-app"
+        DOCKER_IMAGE = "yuviiee/docker-py-backend-app"
     }
 
     stages {
