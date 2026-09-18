@@ -58,5 +58,18 @@ pipeline {
                 '''
             }
         }
+        stage('Production Approval') {
+            steps {
+                input message: 'Deploy to Production?', ok: 'Deploy'
+            }
+        }
+        stage('Deploy to PRODUCTION') {
+            steps {
+                bat '''
+                docker rm -f prod-app 2>NUL || exit 0
+                docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
+                '''
+            }
+        }
     }
 }
