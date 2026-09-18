@@ -50,5 +50,13 @@ pipeline {
                 '''
             }
         }
+        stage('Deploy to STAGING') {
+            steps {
+                bat '''
+                docker rm -f staging-app 2>NUL || exit 0
+                docker run -d --name staging-app -p 5002:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
+                '''
+            }
+        }
     }
 }
