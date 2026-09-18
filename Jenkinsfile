@@ -67,29 +67,52 @@ pipeline {
         stage('Deploy to PRODUCTION') {
             steps {
                 script {
+
                     def previousImage = bat(
                         script: 'docker inspect --format="{{.Config.Image}}" prod-app 2>NUL',
                         returnStdout: true
                     ).trim()
-                    try {
-                        timeout(time: 5, unit: 'MINUTES') {
-                            bat """
-                            docker rm -f prod-app 2>NUL || exit 0
-                            docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
-                            """
-                        }
-                        echo "Production deployment successful."
-                    }
-                    catch (Exception e) {
 
-                        echo "Production deployment failed."
+                    echo "Previous Production Image: ${previousImage}"
+
+                    try {
+
+                        timeout(time: 5, unit: 'MINUTES') {
+
+                            bat '''
+                            docker rm -f prod-app 2>NUL || exit 0
+
+                            docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
+
+                            timeout /t 5 /nobreak
+
+                            curl http://localhost:5003/health
+                            '''
+
+                            echo "Production health check passed."
+                        }
+
+                        echo "Production deployment successful."
+
+                    } catch (Exception e) {
+
+                        echo "Production deployment failed!"
                         echo "Rolling back to: ${previousImage}"
+
                         bat '''
                         docker rm -f prod-app 2>NUL || exit 0
                         '''
-                        bat """
-                        docker run -d --name prod-app -p 5003:5000 ${previousImage}
-                        """
+
+                        if (previousImage) {
+                            bat """
+                            docker run -d --name prod-app -p 5003:5000 ${previousImage}
+                            """
+
+                            echo "Rollback completed successfully."
+                        } else {
+                            echo "No previous production image available for rollback."
+                        }
+
                         throw e
                     }
                 }
