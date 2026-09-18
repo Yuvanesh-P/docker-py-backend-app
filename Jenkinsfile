@@ -69,7 +69,7 @@ pipeline {
                 script {
 
                     def previousImage = bat(
-                        script: 'docker inspect --format="{{.Config.Image}}" prod-app 2>NUL',
+                        script: '@docker inspect --format="{{.Config.Image}}" prod-app 2>NUL',
                         returnStdout: true
                     ).trim()
 
@@ -84,14 +84,14 @@ pipeline {
 
                             docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
 
-                            timeout /t 5 /nobreak
+                            ping 127.0.0.1 -n 6 > NUL
 
-                            curl http://localhost:5003/health
+                            curl --fail http://localhost:5003/health
                             '''
 
-                            echo "Production health check passed."
                         }
 
+                        echo "Production health check passed."
                         echo "Production deployment successful."
 
                     } catch (Exception e) {
@@ -104,13 +104,17 @@ pipeline {
                         '''
 
                         if (previousImage) {
+
                             bat """
                             docker run -d --name prod-app -p 5003:5000 ${previousImage}
                             """
 
                             echo "Rollback completed successfully."
+
                         } else {
-                            echo "No previous production image available for rollback."
+
+                            echo "No previous production image available."
+
                         }
 
                         throw e
