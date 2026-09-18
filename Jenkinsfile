@@ -62,6 +62,7 @@ pipeline {
         stage('Production Approval') {
             steps {
                 input message: 'Deploy to Production?', ok: 'Deploy'
+                submitter: 'Admin'
             }
         }
         stage('Deploy to PRODUCTION') {
@@ -98,7 +99,7 @@ pipeline {
                             sleep time: 5, unit: 'SECONDS'
 
                             bat '''
-                            curl --fail http://localhost:5003/wrong-health
+                            curl --fail http://localhost:5003/health
                             '''
 
                             echo "Production health check passed."
