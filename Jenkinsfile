@@ -9,11 +9,11 @@ pipeline {
     stages {
 
         stage('Checkout') {
-    steps {
-        git branch: 'main',
-            url: 'https://github.com/Yuvanesh-P/docker-py-backend-app.git'
-        }
-    }   
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/Yuvanesh-P/docker-py-backend-app.git'
+            }
+        }   
 
         stage('Test') {
             steps {
