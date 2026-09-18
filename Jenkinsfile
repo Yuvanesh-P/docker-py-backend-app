@@ -9,10 +9,11 @@ pipeline {
     stages {
 
         stage('Checkout') {
-            steps {
-                echo 'Checking out source code...'
-            }
+    steps {
+        git branch: 'main',
+            url: 'https://github.com/Yuvanesh-P/docker-py-backend-app.git'
         }
+    }   
 
         stage('Test') {
             steps {
