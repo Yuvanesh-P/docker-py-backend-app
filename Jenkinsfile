@@ -4,6 +4,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "yuviiee/docker-py-backend-app"
+        PREVIOUS_IMAGE = ""
     }
 
     stages {
@@ -65,10 +66,13 @@ pipeline {
         }
         stage('Deploy to PRODUCTION') {
             steps {
-                bat '''
-                docker rm -f prod-app 2>NUL || exit 0
-                docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
-                '''
+                timeout(time: 5, unit: 'MINUTES') {
+                    bat '''
+                    docker inspect --format="{{.Config.Image}}" prod-app > previous_image.txt 2>NUL || echo NONE > previous_image.txt
+                    docker rm -f prod-app 2>NUL || exit 0
+                    docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
+                    '''
+                }       
             }
         }
     }
