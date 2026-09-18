@@ -81,17 +81,19 @@ pipeline {
 
                             bat '''
                             docker rm -f prod-app 2>NUL || exit 0
-
                             docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
+                            '''
 
-                            ping 127.0.0.1 -n 6 > NUL
+                            echo "Waiting for application to start..."
+                            sleep time: 5, unit: 'SECONDS'
 
+                            bat '''
                             curl --fail http://localhost:5003/health
                             '''
 
+                            echo "Production health check passed."
                         }
 
-                        echo "Production health check passed."
                         echo "Production deployment successful."
 
                     } catch (Exception e) {
@@ -113,8 +115,7 @@ pipeline {
 
                         } else {
 
-                            echo "No previous production image available."
-
+                            echo "No previous production image available for rollback."
                         }
 
                         throw e
