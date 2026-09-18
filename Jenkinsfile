@@ -68,12 +68,22 @@ pipeline {
             steps {
                 script {
 
-                    def previousImage = bat(
-                        script: '@docker inspect --format="{{.Config.Image}}" prod-app 2>NUL',
-                        returnStdout: true
-                    ).trim()
+                    def previousImage = ""
 
-                    echo "Previous Production Image: ${previousImage}"
+                    try {
+
+                        previousImage = bat(
+                            script: '@docker inspect -f "{{.Config.Image}}" prod-app 2>NUL',
+                            returnStdout: true
+                        ).trim()
+
+                        echo "Previous Production Image: ${previousImage}"
+
+                    } catch (Exception e) {
+
+                        echo "No previous production container found."
+                        previousImage = ""
+                    }
 
                     try {
 
@@ -84,7 +94,7 @@ pipeline {
                             docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
                             '''
 
-                            echo "Waiting for application to start..."
+                            echo "Waiting for production application..."
                             sleep time: 5, unit: 'SECONDS'
 
                             bat '''
@@ -99,13 +109,14 @@ pipeline {
                     } catch (Exception e) {
 
                         echo "Production deployment failed!"
-                        echo "Rolling back to: ${previousImage}"
-
-                        bat '''
-                        docker rm -f prod-app 2>NUL || exit 0
-                        '''
 
                         if (previousImage) {
+
+                            echo "Rolling back to: ${previousImage}"
+
+                            bat '''
+                            docker rm -f prod-app 2>NUL || exit 0
+                            '''
 
                             bat """
                             docker run -d --name prod-app -p 5003:5000 ${previousImage}
