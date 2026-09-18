@@ -42,6 +42,13 @@ pipeline {
                 }
             }
         }
-
+        stage('Deploy to DEV') {
+            steps {
+                bat '''
+                docker rm -f dev-app 2>NUL || exit 0
+                docker run -d --name dev-app -p 5001:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
+                '''
+            }
+        }
     }
 }
