@@ -98,7 +98,7 @@ pipeline {
                             sleep time: 5, unit: 'SECONDS'
 
                             bat '''
-                            curl --fail http://localhost:5003/health
+                            curl --fail http://localhost:5003/wrong-health
                             '''
 
                             echo "Production health check passed."
