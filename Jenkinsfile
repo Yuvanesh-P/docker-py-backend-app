@@ -66,13 +66,33 @@ pipeline {
         }
         stage('Deploy to PRODUCTION') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    bat '''
-                    docker inspect --format="{{.Config.Image}}" prod-app > previous_image.txt 2>NUL || echo NONE > previous_image.txt
-                    docker rm -f prod-app 2>NUL || exit 0
-                    docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
-                    '''
-                }       
+                script {
+                    def previousImage = bat(
+                        script: 'docker inspect --format="{{.Config.Image}}" prod-app 2>NUL',
+                        returnStdout: true
+                    ).trim()
+                    try {
+                        timeout(time: 5, unit: 'MINUTES') {
+                            bat """
+                            docker rm -f prod-app 2>NUL || exit 0
+                            docker run -d --name prod-app -p 5003:5000 %DOCKER_IMAGE%:%BUILD_NUMBER%
+                            """
+                        }
+                        echo "Production deployment successful."
+                    }
+                    catch (Exception e) {
+
+                        echo "Production deployment failed."
+                        echo "Rolling back to: ${previousImage}"
+                        bat '''
+                        docker rm -f prod-app 2>NUL || exit 0
+                        '''
+                        bat """
+                        docker run -d --name prod-app -p 5003:5000 ${previousImage}
+                        """
+                        throw e
+                    }
+                }
             }
         }
     }
